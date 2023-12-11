@@ -12,6 +12,7 @@ const sizes = {
     width: window.innerWidth,
     height: window.innerHeight
 }
+const modelPosition = [0, -15, 0];
 
 /**
  * CAMERAS
@@ -21,8 +22,9 @@ const primaryCameraAspect = window.innerWidth / window.innerHeight;
 const primaryCameraPosition = { x: 0, y: 0, z: 10 };
 const primaryCameraLookAt = { x: 0, y: 0, z: 0 };
 
-const secondaryCameraSettings = { fov: 90, near: 0.1, far: 500 };
-const secondaryCameraAspect = window.innerWidth / window.innerHeight;
+const secondaryCameraSettings = { fov: 45, near: 0.1, far: 500 };
+const secondaryCameraAspect = 4 / 6;
+const secondaryCameraPosition = { x: 0, y: 50, z: 220 };
 const secondaryCameraLookAt = { x: 10, y: 5, z: -10 };
 
 const primaryCamera = new THREE.PerspectiveCamera(primaryCameraSettings.fov, primaryCameraAspect, primaryCameraSettings.near, primaryCameraSettings.far);
@@ -47,12 +49,12 @@ const primaryScene = new THREE.Scene();
 const secondaryScene = new THREE.Scene();
 
 primaryScene.background = new THREE.Color('#C9FCA5');
-secondaryScene.background = new THREE.Color('#7f6e6e');
+secondaryScene.background = new THREE.Color('#C9FCA5');
 
 primaryCamera.position.set(primaryCameraPosition.x, primaryCameraPosition.y, primaryCameraPosition.z);
 primaryCamera.lookAt(primaryCameraLookAt.x, primaryCameraLookAt.y, primaryCameraLookAt.z);
 
-secondaryCamera.position.set(secondaryTargetPlanePosition.x, secondaryTargetPlanePosition.y + 4, secondaryTargetPlanePosition.z);
+secondaryCamera.position.set(secondaryCameraPosition.x, secondaryCameraPosition.y, secondaryCameraPosition.z);
 secondaryCamera.lookAt(secondaryCameraLookAt.x, secondaryCameraLookAt.y, secondaryCameraLookAt.z);
 
 primaryScene.add(primaryCamera);
@@ -89,6 +91,51 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  */
 const controls = new OrbitControls(primaryCamera, canvas)
 controls.enableDamping = true
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Load 3D Model
+/////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Textures
+ */
+const textureLoader = new THREE.TextureLoader()
+const linesTexture = textureLoader.load('./textures/lines.png')
+
+// Material
+const material = new THREE.RawShaderMaterial({
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader,
+    uniforms: 
+    {
+        uTexture: { value: linesTexture },
+        specMap: { value: secondaryScene.background }
+    }
+})
+
+const loader = new GLTFLoader();
+loader.setPath( './models/' );
+loader.load( 'cyberpunk_samurai_s.glb', function ( model ) 
+    {
+        model.scene.traverse( function ( model ) 
+            {
+                model.material = material;
+                model.position.set(modelPosition[0], modelPosition[1], modelPosition[2]);
+                model.rotation.set(0, -0.2, 0);
+            }
+        );
+
+        console.log(model);
+
+        //primaryScene.add( model.scene );
+        secondaryScene.add( model.scene );
+
+    }
+);
+
+/////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
 
 /**
  * ANIMATION LOOP
