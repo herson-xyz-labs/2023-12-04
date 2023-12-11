@@ -40,14 +40,14 @@ void main() {
     float brightness = (textureColor.r + textureColor.g + textureColor.b) / 3.0;
     float ditherNoise = ditherPattern(gl_FragCoord.xy);
 
-    // if (brightness > 0.2) {
-    //     // If the color is closer to white, change it to the new RGB color
-    //     textureColor = vec4(201.0 / 255.0, 252.0 / 255.0, 165.0 / 255.0, 1.0);
+    if (brightness > 0.2) {
+        // If the color is closer to white, change it to the new RGB color
+        textureColor = vec4(201.0 / 255.0, 252.0 / 255.0, 165.0 / 255.0, 1.0);
 
-    // } else {
-    //     // If the color is closer to black, keep it as is
-    //     textureColor = vec4(0.0, 0.0, 0.0, 1.0);
-    // }
+    } else {
+        // If the color is closer to black, keep it as is
+        textureColor = vec4(0.0, 0.0, 0.0, 1.0);
+    }
 
     vec3 lighting      = vec3(0.0);
     vec3 normal        = normalize(vNormal);
