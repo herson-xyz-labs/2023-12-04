@@ -4,6 +4,42 @@ import * as dat from 'lil-gui'
 import vertexShader from './shaders/vertex.glsl'
 import fragmentShader from './shaders/fragment.glsl'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
+
+// Vertex Shader
+const textVertexShader = `
+    varying vec3 vPosition;
+
+    void main() {
+        vPosition = position;
+        
+        // Apply a sine wave distortion along the X-axis
+        // The amplitude and frequency can be adjusted as needed
+        float amplitude = 0.5; // Adjust the amplitude of the wave
+        float frequency = 5.0; // Adjust the frequency of the wave
+
+        // Calculate the distorted X position
+        float distortedX = position.x + amplitude * sin(position.z * frequency);
+        float distortedY = position.y + amplitude * sin(position.z * frequency);
+
+        // Set the new position
+        vec3 newPosition = vec3(distortedX, distortedY, position.z);
+        
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+    }
+`;
+
+// Fragment Shader
+const textFragmentShader = `
+    uniform vec3 color;
+    varying vec3 vPosition;
+
+    void main() {
+        // Simple color assignment
+        gl_FragColor = vec4(color, 1.0);
+    }
+`;
 
 /**
  * RESOLUTION
@@ -132,6 +168,43 @@ loader.load( 'cyberpunk_samurai_s.glb', function ( model )
 
     }
 );
+
+// Load the font
+const fontLoader = new FontLoader();
+
+fontLoader.load('./fonts/helvetiker_regular.typeface.json', function (font) {
+    // Create text geometry
+    const textGeometry = new TextGeometry('ENIGMA', {
+        font: font,
+        size: 0.5,
+        height: 0.1,
+    });
+
+    // Custom Shader Material
+    const customMaterial = new THREE.ShaderMaterial({
+        vertexShader: textVertexShader,
+        fragmentShader: textFragmentShader,
+        uniforms: {
+            color: { value: new THREE.Color(0x84a5bc) }
+        }
+    });    
+
+    // Create a mesh with basic material
+    const textMaterial = new THREE.MeshBasicMaterial({ color: 0x84a5bc });
+    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+
+    // Create an outline using EdgesGeometry
+    const edges = new THREE.EdgesGeometry(textGeometry);
+    const line = new THREE.LineSegments(edges, customMaterial);
+
+    line.position.set(0, 3, 0);
+    textMesh.position.set(0, 3, 0);
+
+    // Add the text to the scene
+    //primaryScene.add(line);
+    primaryScene.add(textMesh);
+
+});
 
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
