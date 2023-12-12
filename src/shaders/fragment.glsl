@@ -34,19 +34,19 @@ float ditherPattern(vec2 position) {
 }
 
 void main() {
-    vec4 textureColor  = texture2D(uTexture, fract(vUv * 40.0));
+    vec4 textureColor  = texture2D(uTexture, fract(vUv * 20.0));
+    vec3 limeGreen = vec3(201.0/255.0, 240.0/255.0, 155.0/255.0);
 
     // Determine if the color is closer to white or black
     float brightness = (textureColor.r + textureColor.g + textureColor.b) / 3.0;
     float ditherNoise = ditherPattern(gl_FragCoord.xy);
 
-    if (brightness > 0.2) {
-        // If the color is closer to white, change it to the new RGB color
-        textureColor = vec4(201.0 / 255.0, 252.0 / 255.0, 165.0 / 255.0, 1.0);
-
-    } else {
-        // If the color is closer to black, keep it as is
+    if (brightness > 0.999) {
+        // If the color is closer to white
         textureColor = vec4(0.0, 0.0, 0.0, 1.0);
+    } else {
+        // If the color is closer to black
+        textureColor = vec4(limeGreen, 1.0);
     }
 
     vec3 lighting      = vec3(0.0);
@@ -54,10 +54,11 @@ void main() {
 
     vec3 viewDirection = normalize(cameraPosition - vPosition);
 
-    vec3  ambientLight = vec3(1.0);                       
+    vec3  ambientLight = vec3(limeGreen);                       
 
-    vec3  skyLight     = vec3(201/255, 252/255, 165/255);                   
-    vec3  groundLight  = vec3(201/255, 252/255, 165/255);                   
+    //vec3  skyLight     = vec3(201/255, 252/255, 165/255);
+    vec3  skyLight     = vec3(0.1);                
+    vec3  groundLight  = vec3(0.1);                   
     float hemiMix      = remap(normal.y, -1.0, 1.0, 0.0, 1.0);  
     vec3  hemiLight    = mix(groundLight, skyLight, hemiMix);   
 
@@ -69,9 +70,9 @@ void main() {
         - Build "steppiness" into the lighting
     */
 
-    dp *= smoothstep(0.5, 0.5005, dp);
+    dp *= smoothstep(0.5, 0.5001, dp);
 
-    vec3  sunlightColor  = vec3(1.0, 1.0, 0.9);
+    vec3  sunlightColor  = vec3(limeGreen);
     vec3  sunlight       = sunlightColor * dp;
 
   // Phong Specular
@@ -92,14 +93,17 @@ void main() {
 
     // Fresnel
     float fresnel = 1.0 - max(0.0, dot(viewDirection, normal));
-    fresnel = pow(fresnel, 2.0);
+    fresnel = pow(fresnel, 1.4);
 
     specular *= fresnel;
     
-    lighting += ambientLight * 0.1 + hemiLight * 0.5 + sunlight * 0.5;  
-       
+    lighting += ambientLight * 0.05 + hemiLight * 0.05 + sunlight;
 
-    vec3  color          = textureColor.rgb * 0.5 + lighting + specular;   
+    // Apply dithering based on brightness
+    // Darker areas will have more noise
+    float ditherEffect = mix(0.5, ditherNoise, brightness); // Adjust dithering effect based on brightness
+
+    vec3  color          = (textureColor.rgb - (textureColor.g * 0.9)) + lighting * ditherEffect + specular;   
 
     //color                = linearTosRGB(color);       // linear to sRGB conversion
     color                = pow(color, vec3(1.0 / 2.2)); // pow(1.0 / 2.2) approximation
